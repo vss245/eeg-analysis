@@ -15,3 +15,17 @@ cfg.params(:,:,1)=[-0.8 0 -0.1;
                    0 0 -0.8];    
 cfg.noisecov = [1 0 0;0 1 0;0 0 1];
 data=ft_connectivitysimulation(cfg);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% %Calculate power, coherence, and Granger causality based on parametric and %non-parametric estimates as in Figure 9 b and c
+%calculate
+cfg
+cfg.method
+cfg.taper
+cfg.output
+cfg.tapsmofrq = 3;
+cfg.foilim = [0 100];
+freq = ft_freqanalysis(cfg, data);
+%freqdescriptives calculates the power spectrum
+cfg = [];
+fd = ft_freqdescriptives(cfg, freq);
+%Parametric (auto-regressive model based) derivation of AR coefficients
+%multivariate analysis will compute the auto-regressive coefficients and associated noise covariance matrix
