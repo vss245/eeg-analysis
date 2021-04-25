@@ -1,1 +1,1 @@
-# Random EEG analysis code that I've decided to upload for posterity
+Random EEG analysis code that I've decided to upload for posterity
