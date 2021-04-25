@@ -1,5 +1,4 @@
 % EEG classification of motor imagery task
-% by Veronika Shamova
 %% Loading the data
 load('mi_data.mat');
 eeg_data=fv_imag.x;
