@@ -1,5 +1,4 @@
-% EEG classification of motor imagery task
-% by Veronika Shamova
+% EEG classification of a motor imagery task
 %% Loading the data
 load('mi_data.mat');
 eeg_data=fv_imag.x;
@@ -14,14 +13,15 @@ nfs = fs/2;
 [b, a] = butter(4, [8/nfs 13/nfs]);
 feeg_data = filtfilt(b,a,eeg_data);
 % split the filtered data into training and testing sets
-train_set= feeg_data(:,:,1:75);
+train_set=feeg_data(:,:,1:75);
 test_set=feeg_data(:,:,76:150);
-%% Step 2 - Calculating the CSP
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Step 2 - Calculating the CSP (common spatial pattern)
 % get hand labels and split the training data into left and right hand
 h_labels = (fv_imag.y(1,1:75))'; % 1 for left hand, 0 for right hand
 lh_data = train_set(:,:,find(h_labels));
 rh_data = train_set(:,:,find(~h_labels));
-% obtain channel covariance matrices (A'A) for each trial and average 
+% obtain channel covariance matrices (A'A) for each trial and average
 % prealloc
 r_tri = size(rh_data,3);
 l_tri = 75-r_tri;
@@ -32,7 +32,7 @@ for i = 1:r_tri
     trial = rh_data(:,:,i);
     % subtract the mean
     trial = bsxfun(@minus,trial,squeeze(mean(trial,1)));
-    cov_mat = cov(trial)/trace(cov(trial)); 
+    cov_mat = cov(trial)/trace(cov(trial));
     rh_cov(:,:,i) = cov_mat;
 end
 C1 = mean(rh_cov,3); % average over trials
@@ -43,22 +43,24 @@ for i = 1:l_tri
     cov_mat = cov(trial)/trace(cov(trial));
     lh_cov(:,:,i) = cov_mat;
 end
-C2 = mean(lh_cov,3); % average over trials 
-% generalized eigenvalue problem: C1*w = lambda*C2*w
+C2 = mean(lh_cov,3); % average over trials
+% Generalized eigenvalue problem: C1*w = lambda*C2*w
 [ei_vec, ei_val] = eig(C1, C1+C2);
-% sort eigenvalues
+% Sort eigenvalues
 [ei_val_d,indexes] = sort(diag(ei_val),'descend');
 ei_vec = ei_vec(:, indexes);
-%retaining 6 spatial filters (3 with highest eigenvalues, 3 with lowest)
+% Retaining 6 spatial filters (3 with highest eigenvalues, 3 with lowest)
 csp = [ei_vec(:,1:3) ei_vec(:,82:84)];
-%% Step 3 - Project the training data with the CSP filters
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Step 3 - Project (multiply) the training data with the CSP filters
 proj_mat = ones(nsam,6,ntrials);
 for n = 1:ntrials
    proj_mat(:,:,n) = train_set(:,:,n)*csp;
 end
 %variance across time and log
 logvar = squeeze(log(var(proj_mat)));
-%% Step 4 - LDA
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Step 4 - LDA (linear discriminant analysis)
 %train LDA
 %split by class and calculate means
 lv_left = logvar(:,find(h_labels));
